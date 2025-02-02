@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Text Formatter",
+  "version": "1.0",
+  "description": "Захватывает и форматирует текст в поле ввода.",
+  "permissions": ["activeTab"],
+  "content_scripts": [
+    {
+      "matches": ["https://my.websoft.ru/vchat/*"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ]
+}

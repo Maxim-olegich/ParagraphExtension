@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Text Formatter",
+  "version": "1.0",
+  "description": "Захватывает и форматирует текст в поле ввода.",
+  "permissions": ["scripting"],
+  "host_permissions": ["https://my.websoft.ru/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://my.websoft.ru/vchat/*"],        
+      "js": ["content.js"]
+    }
+  ]
+}
+  
