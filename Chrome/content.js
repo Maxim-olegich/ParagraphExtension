@@ -1,39 +1,3 @@
-// const BOLD = {
-//   start: "<b>",
-//   end: "</b>",
-//   length: 3
-// };
-// const ITALIC = {
-//   start: "<i>",
-//   end: "</i>",
-//   length: 3
-// };
-// const UNDERLINE = {
-//   start: "<u>",
-//   end: "</u>",
-//   length: 3
-// };
-// const STRIKE = {
-//   start: "<strike>",
-//   end: "</strike>",
-//   length: 8
-// };
-// const FONT = {
-//   start: '<font face="monospace" color="#ff6600">',
-//   end: "</font>",
-//   length: 39
-// };
-
-// const isItTag = function(string, indexStart) {
-//   if (string.charAt(indexStart + 1 === "/")) {
-//     if (string.charAt(indexStart + 3) === ">") {
-//       return string
-//     }
-//   } else {
-
-//   }
-// }
-
 const getTagLength = function (tag) {};
 
 let inputField = null;
@@ -81,13 +45,12 @@ const handleKeydownCtrlV = function (event) {
 };
 
 const handlePasteText = function (event) {
-  pasteIntoEditableDiv(
-    originalText,
-    event.clipboardData.getData("text"),
-    textSelection
-  );
-};
+  let pastedText = event.clipboardData.getData("text");
 
+  pastedText = pastedText.replaceAll("\r\n", "<br>");
+
+  pasteIntoEditableDiv(originalText, pastedText, textSelection);
+};
 const handleSelectionChange = function () {
   // console.log("handleSelectionChange");
 
@@ -160,8 +123,20 @@ const pasteIntoEditableDiv = function (text, pastedText, positions) {
   let textStart = text.slice(0, indexStart);
   let textEnd = text.slice(indexEnd);
   inputField.innerHTML = textStart + pastedText + textEnd;
+  setCursorToEnd(inputField);
 };
 
 const isEditor = function (element) {
   return element != null && element.classList.contains("ws-form--text");
 };
+
+function setCursorToEnd(element) {
+  const range = document.createRange();
+  const sel = window.getSelection();
+
+  range.selectNodeContents(element);
+  range.collapse(false);
+
+  sel.removeAllRanges();
+  sel.addRange(range);
+}

@@ -10,5 +10,11 @@
       "js": ["content.js"],
       "run_at": "document_end"
     }
-  ]
+  ],
+  "browser_specific_settings": {
+  "gecko": {
+    "id": "kapahgaiii7@yandex.ru",
+    "strict_min_version": "109.0"
+  }
+}
 }

@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Text Formatter",
+  "name": "Text Formatter Chrome",
   "version": "1.0",
   "description": "Захватывает и форматирует текст в поле ввода.",
   "permissions": ["scripting"],
