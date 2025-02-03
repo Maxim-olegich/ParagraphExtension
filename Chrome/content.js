@@ -47,7 +47,10 @@ const handleKeydownCtrlV = function (event) {
 const handlePasteText = function (event) {
   let pastedText = event.clipboardData.getData("text");
 
-  pastedText = pastedText.replaceAll("\r\n", "<br>");
+  pastedText = pastedText.replaceAll(/\r\n|\n/g, "<br>");
+
+  // alert(pastedText);
+  // console.log(pastedText);
 
   pasteIntoEditableDiv(originalText, pastedText, textSelection);
 };
