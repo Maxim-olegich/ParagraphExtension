@@ -1,4 +1,7 @@
-const getTagLength = function (tag) {};
+const BR = "<br>";
+
+const NBSP = /&nbsp;|&nbsp/g;
+const NEWLINE = /\r\n|\n/g;
 
 let inputField = null;
 let originalText = "";
@@ -47,13 +50,14 @@ const handleKeydownCtrlV = function (event) {
 const handlePasteText = function (event) {
   let pastedText = event.clipboardData.getData("text");
 
-  pastedText = pastedText.replaceAll(/\r\n|\n/g, "<br>");
+  pastedText = pastedText.replaceAll(NEWLINE, "<br>");
 
   // alert(pastedText);
   // console.log(pastedText);
 
   pasteIntoEditableDiv(originalText, pastedText, textSelection);
 };
+
 const handleSelectionChange = function () {
   // console.log("handleSelectionChange");
 
@@ -106,27 +110,40 @@ const getNodeOffset = function (node) {
 };
 
 const pasteIntoEditableDiv = function (text, pastedText, positions) {
-  let indexStart = 0;
-  for (let i = 0; i < positions.start; i++, indexStart++) {
-    if (
-      text.charAt(indexStart) === "<" &&
-      text.charAt(indexStart + 3) === ">"
-    ) {
-      indexStart += 3;
-    }
-  }
+  // console.log(text);
 
-  let indexEnd = 0;
-  for (let i = 0; i < positions.end; i++, indexEnd++) {
-    if (text.charAt(indexEnd) === "<" && text.charAt(indexEnd + 3) === ">") {
-      indexEnd += 3;
-    }
+  text = text.replaceAll(NBSP, " ");
+
+  let indexStart = getAdjustedBRCursorPosition(text, positions.start);
+  let indexEnd = indexStart;
+
+  if (positions.start != positions.end) {
+    indexEnd = getAdjustedBRCursorPosition(text, positions.end);
   }
 
   let textStart = text.slice(0, indexStart);
   let textEnd = text.slice(indexEnd);
+
   inputField.innerHTML = textStart + pastedText + textEnd;
   setCursorToEnd(inputField);
+};
+
+const getAdjustedBRCursorPosition = function (text, cursorIndex) {
+  let adjustedCursorIndex = 0;
+  for (let i = 0; i < cursorIndex; i++, adjustedCursorIndex++) {
+    if (
+      text.charAt(adjustedCursorIndex) === "<" &&
+      isBRTag(text, adjustedCursorIndex)
+    ) {
+      adjustedCursorIndex += 3;
+    }
+  }
+
+  return adjustedCursorIndex;
+};
+
+const isBRTag = function (text, indexStart) {
+  return BR.localeCompare(text.slice(indexStart, indexStart + 4)) === 0;
 };
 
 const isEditor = function (element) {

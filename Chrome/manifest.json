@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Text Formatter Chrome",
-  "version": "1.0",
-  "description": "Захватывает и форматирует текст в поле ввода.",
+  "name": "Text Formatter For WebSoft Workspace Chrome",
+  "version": "1.1",
+  "description": "Сохраняет абзацы при всатвке текста/файлов с помощью комбинации Ctrl+V.",
   "permissions": ["scripting"],
   "host_permissions": ["https://my.websoft.ru/*"],
   "content_scripts": [
