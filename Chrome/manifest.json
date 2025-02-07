@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Text Formatter For WebSoft Workspace Chrome",
+  "name": "Paragraph Extension For WebSoft Workspace Chrome",
   "version": "1.1",
   "description": "Сохраняет абзацы при всатвке текста/файлов с помощью комбинации Ctrl+V.",
   "permissions": ["scripting"],
