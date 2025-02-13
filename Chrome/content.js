@@ -1,7 +1,6 @@
-const BR = "<br>";
-
-const NBSP = /&nbsp;|&nbsp/g;
+const NBSPEntity = /&nbsp/g;
 const NEWLINE = /\r\n|\n/g;
+const RIGHT_ARROW_ENTITY = /-&gt/g; // ->
 
 let inputField = null;
 let originalText = "";
@@ -11,7 +10,6 @@ const observer = new MutationObserver(() => {
   const newInputField = document.querySelector(".ws-form--text");
 
   if (newInputField && newInputField !== inputField) {
-    // console.log("newInputField was found:", inputField);
     handleNewInputField(newInputField);
   }
 });
@@ -23,7 +21,6 @@ observer.observe(document.body, {
 
 const handleNewInputField = function (newInputField) {
   if (!newInputField) {
-    // console.log(`newInputField is null or empty`);
     return;
   }
 
@@ -34,7 +31,6 @@ const handleNewInputField = function (newInputField) {
   }
 
   inputField = newInputField;
-  // console.log("new inputField detected:", inputField);
 
   document.addEventListener("selectionchange", handleSelectionChange);
   inputField.addEventListener("keydown", handleKeydownCtrlV);
@@ -52,15 +48,10 @@ const handlePasteText = function (event) {
 
   pastedText = pastedText.replaceAll(NEWLINE, "<br>");
 
-  // alert(pastedText);
-  // console.log(pastedText);
-
   pasteIntoEditableDiv(originalText, pastedText, textSelection);
 };
 
 const handleSelectionChange = function () {
-  // console.log("handleSelectionChange");
-
   if (isEditor(document.activeElement)) {
     textSelection = getTextSelection(document.activeElement);
   }
@@ -96,7 +87,7 @@ const getTextLength = function (parent, node, offset) {
 const getNodeTextLength = function (node) {
   let textLength = 0;
 
-  if (node.nodeName == "BR") textLength = 1;
+  if (node.nodeName == "BR") textLength = 4;
   else if (node.nodeName == "#text") textLength = node.nodeValue.length;
   else if (node.childNodes != null)
     for (let i = 0; i < node.childNodes.length; i++)
@@ -110,15 +101,11 @@ const getNodeOffset = function (node) {
 };
 
 const pasteIntoEditableDiv = function (text, pastedText, positions) {
-  // console.log(text);
-
-  text = text.replaceAll(NBSP, " ");
-
-  let indexStart = getAdjustedBRCursorPosition(text, positions.start);
+  let indexStart = getAdjustedCursorPosition(text, positions.start);
   let indexEnd = indexStart;
 
   if (positions.start != positions.end) {
-    indexEnd = getAdjustedBRCursorPosition(text, positions.end);
+    indexEnd = getAdjustedCursorPosition(text, positions.end);
   }
 
   let textStart = text.slice(0, indexStart);
@@ -128,22 +115,33 @@ const pasteIntoEditableDiv = function (text, pastedText, positions) {
   setCursorToEnd(inputField);
 };
 
-const getAdjustedBRCursorPosition = function (text, cursorIndex) {
+const getAdjustedCursorPosition = function (text, cursorIndex) {
   let adjustedCursorIndex = 0;
   for (let i = 0; i < cursorIndex; i++, adjustedCursorIndex++) {
     if (
-      text.charAt(adjustedCursorIndex) === "<" &&
-      isBRTag(text, adjustedCursorIndex)
+      text.charAt(adjustedCursorIndex) === "-" &&
+      isRightArrowEntity(text, adjustedCursorIndex)
     ) {
       adjustedCursorIndex += 3;
+    } else if (
+      text.charAt(adjustedCursorIndex) === "&" &&
+      isNBSPEntity(text, adjustedCursorIndex)
+    ) {
+      adjustedCursorIndex += 5;
     }
   }
 
   return adjustedCursorIndex;
 };
 
-const isBRTag = function (text, indexStart) {
-  return BR.localeCompare(text.slice(indexStart, indexStart + 4)) === 0;
+const isRightArrowEntity = function (text, indexStart) {
+  let substr = text.slice(indexStart, indexStart + 5);
+  return substr.match(RIGHT_ARROW_ENTITY) !== null;
+};
+
+const isNBSPEntity = function (text, indexStart) {
+  let substr = text.slice(indexStart, indexStart + 6);
+  return substr.match(NBSPEntity) !== null;
 };
 
 const isEditor = function (element) {

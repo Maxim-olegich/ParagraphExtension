@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Paragraph Extension For WebSoft Workspace Firefox",
-  "version": "1.1",
+  "name": "Paragraph Extension for WebSoft Workspace",
+  "version": "1.2",
   "description": "Сохраняет абзацы при всатвке текста/файлов с помощью комбинации Ctrl+V.",
   "permissions": ["activeTab"],
   "content_scripts": [
