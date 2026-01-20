@@ -1,8 +1,7 @@
 const NBSPEntity = /&nbsp/g;
 const NEWLINE = /\r\n|\n/g;
 const RIGHT_ARROW_ENTITY = /-&gt/g; // ->
-const FORMAT_TAGS = /<\/?(b|i|u|strike)>/gi;
-const FONT_TAG = /^<\/?font\b[^>]*>/i;
+const BRtag = /<br>/g;
 
 let inputField = null;
 let originalText = "";
@@ -76,9 +75,12 @@ const getTextLength = function (parent, node, offset) {
   let textLength = 0;
 
   if (node.nodeName == "#text") textLength += offset;
-  else for (let i = 0; i < offset; i++) textLength += getNodeTextLength(node.childNodes[i]);
+  else
+    for (let i = 0; i < offset; i++)
+      textLength += getNodeTextLength(node.childNodes[i]);
 
-  if (node != parent) textLength += getTextLength(parent, node.parentNode, getNodeOffset(node));
+  if (node != parent)
+    textLength += getTextLength(parent, node.parentNode, getNodeOffset(node));
 
   return textLength;
 };
@@ -86,26 +88,11 @@ const getTextLength = function (parent, node, offset) {
 const getNodeTextLength = function (node) {
   let textLength = 0;
 
-  if (node.nodeName === "BR") {
-    textLength = 4; // <br>
-  } else if (node.nodeName === "#text") {
-    textLength = node.nodeValue.length;
-  } else if (
-    node.nodeName === "B" ||
-    node.nodeName === "I" ||
-    node.nodeName === "U" ||
-    node.nodeName === "STRIKE" ||
-    node.nodeName === "FONT"
-  ) {
-    // теги сами длину не дают, считаем только детей
-    for (let i = 0; i < node.childNodes.length; i++) {
+  if (node.nodeName == "BR") textLength = 4;
+  else if (node.nodeName == "#text") textLength = node.nodeValue.length;
+  else if (node.childNodes != null)
+    for (let i = 0; i < node.childNodes.length; i++)
       textLength += getNodeTextLength(node.childNodes[i]);
-    }
-  } else if (node.childNodes != null) {
-    for (let i = 0; i < node.childNodes.length; i++) {
-      textLength += getNodeTextLength(node.childNodes[i]);
-    }
-  }
 
   return textLength;
 };
@@ -126,47 +113,109 @@ const pasteIntoEditableDiv = function (text, pastedText, positions) {
   let textEnd = text.slice(indexEnd);
 
   inputField.innerHTML = textStart + pastedText + textEnd;
-  setCursorToEnd(inputField);
+
+  setCursorToEndPastedNode(pastedText);
+};
+
+// <br>123<br><br>
+// 123<br><br>
+// 123
+// <br><br>123
+
+const setCursorToEndPastedNode = function (pastedText) {
+  const BRCountFromEnd = getPastedTextBRCountFromEnd(pastedText);
+  const lastPastedNodeValue = getPastedTextLastNodeValue(
+    pastedText,
+    BRCountFromEnd
+  );
+
+  inputField.focus();
+  let lastPastedNode = findNodeByText(lastPastedNodeValue);
+
+  if (!lastPastedNode) {
+    console.log("setCursorToEndPastedNode: lastPastedNode is", lastPastedNode);
+    return;
+  }
+
+  let caretPosition = lastPastedNode.nodeValue.length;
+
+  if (BRCountFromEnd > 0) {
+    lastPastedNode = getLastPastedBRNode(lastPastedNode, BRCountFromEnd);
+    caretPosition = 0;
+  }
+
+  const range = document.createRange();
+  range.setStart(lastPastedNode, caretPosition);
+  range.setEnd(lastPastedNode, caretPosition);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+};
+
+const getLastPastedBRNode = function (node, count) {
+  for (let i = 0; i < count + 1; i++) {
+    node = node.nextSibling;
+  }
+
+  return node;
+};
+
+const getPastedTextBRCountFromEnd = function (pastedText) {
+  let count = 0;
+
+  for (let i = pastedText.length - 1; i > 3; ) {
+    if (pastedText.charAt(i) === ">" && isBRtag(pastedText, i - 3)) {
+      i -= 4;
+      count++;
+    } else {
+      break;
+    }
+  }
+
+  return count;
+};
+
+const getPastedTextLastNodeValue = function (pastedText, BRCount) {
+  pastedText = pastedText.slice(0, pastedText.length - BRCount * 4); // delete <br> tags from the end
+  return pastedText.slice(pastedText.lastIndexOf("<br>") + 4) || pastedText;
+};
+
+const findNodeByText = function (text) {
+  let currentNode = inputField.firstChild;
+
+  while (currentNode) {
+    if (
+      currentNode.nodeName == "#text" &&
+      ((currentNode.nodeValue.length === text.length &&
+        currentNode.nodeValue === text) ||
+        (currentNode.nodeValue.length > text.length &&
+          currentNode.nodeValue.slice(-text.length) === text))
+    ) {
+      break;
+    }
+    currentNode = currentNode.nextSibling;
+  }
+
+  return currentNode;
 };
 
 const getAdjustedCursorPosition = function (text, cursorIndex) {
   let adjustedCursorIndex = 0;
-
   for (let i = 0; i < cursorIndex; i++, adjustedCursorIndex++) {
-    // -> entity
-    if (text.charAt(adjustedCursorIndex) === "-" && isRightArrowEntity(text, adjustedCursorIndex)) {
+    if (
+      text.charAt(adjustedCursorIndex) === "-" &&
+      isRightArrowEntity(text, adjustedCursorIndex)
+    ) {
       adjustedCursorIndex += 3;
-      continue;
-    }
-
-    // &nbsp;
-    if (text.charAt(adjustedCursorIndex) === "&" && isNBSPEntity(text, adjustedCursorIndex)) {
+    } else if (
+      text.charAt(adjustedCursorIndex) === "&" &&
+      isNBSPEntity(text, adjustedCursorIndex)
+    ) {
       adjustedCursorIndex += 5;
-      continue;
-    }
-
-    if (text.charAt(adjustedCursorIndex) === "<") {
-      const tagMatch = text.slice(adjustedCursorIndex).match(/^<\/?(b|i|u|strike)>/i);
-      if (tagMatch) {
-        adjustedCursorIndex += tagMatch[0].length - 1;
-        i--; // тег не даёт текстовой длины
-      } else {
-        // font tag
-        const fontMatch = text.slice(adjustedCursorIndex).match(/^<\/?font\b[^>]*>/i);
-        if (fontMatch) {
-          adjustedCursorIndex += fontMatch[0].length - 1;
-          i--; // тег не даёт текстовой длины
-        }
-      }
     }
   }
 
   return adjustedCursorIndex;
-};
-
-const isFontTag = function (text, indexStart) {
-  const substr = text.slice(indexStart);
-  return substr.match(FONT_TAG);
 };
 
 const isRightArrowEntity = function (text, indexStart) {
@@ -179,17 +228,11 @@ const isNBSPEntity = function (text, indexStart) {
   return substr.match(NBSPEntity) !== null;
 };
 
+const isBRtag = function (text, indexStart) {
+  let substr = text.slice(indexStart, indexStart + 4);
+  return substr.match(BRtag);
+};
+
 const isEditor = function (element) {
   return element != null && element.classList.contains("ws-form--text");
 };
-
-function setCursorToEnd(element) {
-  const range = document.createRange();
-  const sel = window.getSelection();
-
-  range.selectNodeContents(element);
-  range.collapse(false);
-
-  sel.removeAllRanges();
-  sel.addRange(range);
-}
